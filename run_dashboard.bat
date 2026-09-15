@@ -1,0 +1,6 @@
+@echo off
+echo Starting KPI Dashboard...
+echo Opening dashboard in browser...
+start http://localhost:5000
+python dashboard.py
+pause

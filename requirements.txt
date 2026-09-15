@@ -1,0 +1,29 @@
+# Core dependencies
+psycopg2-binary>=2.9.0  # PostgreSQL database driver
+pymysql>=1.0.0  # MySQL database driver
+pyodbc>=4.0.0  # SQL Server database driver (Windows)
+
+# CSV processing and data manipulation
+pandas>=2.0.0
+
+# Database ORM (optional, for better DB handling)
+sqlalchemy>=2.0.0
+
+# HTTP requests for Slack
+requests>=2.28.0
+
+# Excel report generation
+openpyxl>=3.0.0
+
+# Data processing (optional, for advanced anomaly detection)
+numpy>=1.24.0
+
+# Logging and utilities
+python-dateutil>=2.8.0
+
+# Web dashboard
+flask>=2.3.0
+
+# Production Server
+waitress>=2.1.0
+

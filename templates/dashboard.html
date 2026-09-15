@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time KPI Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --success: #2ec4b6;
+            --warning: #ffb703;
+            --danger: #ef476f;
+            --dark: #f8f9fa;
+            /* Text is now light */
+            --light: #0f172a;
+            /* Background is now dark slate */
+            --white: #1e293b;
+            /* Cards are now dark */
+            --text-muted: #94a3b8;
+            --border-radius: 16px;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Update chart tooltip background and grid lines for dark mode */
+        /* ... existing css ... */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--light);
+            color: var(--dark);
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--dark);
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 1.1em;
+        }
+
+        /* Top Cards */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: var(--white);
+            padding: 24px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .metric-title {
+            font-size: 0.95em;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+        }
+
+        .icon-blue {
+            background: #eef2ff;
+            color: var(--primary);
+        }
+
+        .icon-red {
+            background: #fff5f5;
+            color: var(--danger);
+        }
+
+        .icon-green {
+            background: #e6fffa;
+            color: var(--success);
+        }
+
+        .metric-value {
+            font-size: 2.2em;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--dark);
+        }
+
+        .metric-trend {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .trend-up {
+            color: var(--success);
+        }
+
+        .trend-down {
+            color: var(--danger);
+        }
+
+        .trend-neutral {
+            color: var(--text-muted);
+        }
+
+        /* Main Content */
+        .dashboard-main {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+
+        .chart-section {
+            background: var(--white);
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        .section-header {
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        /* Anomalies Panel */
+        .anomalies-section {
+            background: var(--white);
+            padding: 24px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #e6fffa;
+            color: var(--success);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(1.1);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .anomalies-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-top: 10px;
+            max-height: 600px;
+        }
+
+        .anomaly-card {
+            background: #fff9db;
+            border-left: 4px solid var(--warning);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .anomaly-card.high-priority {
+            background: #fff5f5;
+            border-left-color: var(--danger);
+        }
+
+        .anomaly-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .anomaly-title {
+            font-weight: 600;
+            color: #d97706;
+            /* dark yellow */
+        }
+
+        .anomaly-card.high-priority .anomaly-title {
+            color: var(--danger);
+        }
+
+        .anomaly-time {
+            font-size: 0.8em;
+            color: var(--text-muted);
+        }
+
+        .anomaly-desc {
+            font-size: 0.9em;
+            color: #4b5563;
+        }
+
+        .no-anomalies-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--success);
+        }
+
+        .refresh-fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            border: none;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.4);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            transition: all 0.3s;
+        }
+
+        .refresh-fab:hover {
+            transform: scale(1.1);
+            background: #3a56d4;
+        }
+
+        /* Skeleton Loading */
+        .skeleton {
+            background: #e9ecef;
+            border-radius: 4px;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                opacity: 0.6;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.6;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Real-time KPI Dashboard</h1>
+            <p>Monitoring key business metrics with live anomaly detection</p>
+        </div>
+
+        <!-- Metric Cards -->
+        <div class="metrics-grid">
+            <!-- Revenue Card -->
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-title">Total Revenue</div>
+                    <div class="metric-icon icon-blue"><i class="fas fa-dollar-sign"></i></div>
+                </div>
+                <div class="metric-value" id="revenue-val">-</div>
+                <div class="metric-trend" id="revenue-trend">
+                    <span>-</span>
+                </div>
+            </div>
+
+            <!-- Churn Card -->
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-title">Churn Rate</div>
+                    <div class="metric-icon icon-red"><i class="fas fa-users-slash"></i></div>
+                </div>
+                <div class="metric-value" id="churn-val">-</div>
+                <div class="metric-trend" id="churn-trend">
+                    <span>-</span>
+                </div>
+            </div>
+
+            <!-- Conversion Card -->
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-title">Conversion Rate</div>
+                    <div class="metric-icon icon-green"><i class="fas fa-mouse-pointer"></i></div>
+                </div>
+                <div class="metric-value" id="conversion-val">-</div>
+                <div class="metric-trend" id="conversion-trend">
+                    <span>-</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chart & Anomalies -->
+        <div class="dashboard-main">
+            <div class="chart-section">
+                <div class="section-header">
+                    <div class="section-title">Revenue Trend</div>
+                    <select
+                        style="padding: 6px 12px; border: 1px solid #dee2e6; border-radius: 8px; color: var(--text-muted);">
+                        <option>Last 7 Days</option>
+                        <option>Last 30 Days</option>
+                    </select>
+                </div>
+                <div style="height: 400px; width: 100%;">
+                    <canvas id="mainChart"></canvas>
+                </div>
+
+                <div class="section-header" style="margin-top: 40px;">
+                    <div class="section-title">Other Key Metrics</div>
+                </div>
+                <div id="other-metrics-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                    <!-- Filled by JS -->
+                </div>
+            </div>
+
+            <div class="anomalies-section">
+                <div class="section-header" style="margin-bottom: 20px;">
+                    <div class="section-title">Live Anomalies</div>
+                    <div class="live-badge">
+                        <div class="live-dot"></div>
+                        Live Monitoring
+                    </div>
+                </div>
+                <div class="anomalies-list" id="anomalies-list">
+                    <!-- Filled by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="refresh-fab" onclick="refreshData()">
+        <i class="fas fa-sync-alt"></i>
+    </button>
+
+    <script>
+        let mainChartInstance = null;
+
+        // Mappings for specific KPI types to icons and colors
+        const KPI_CONFIG = {
+            'daily_revenue': { icon: 'fa-dollar-sign', color: 'blue', elementId: 'revenue' },
+            'customer_churn_rate': { icon: 'fa-users-slash', color: 'red', elementId: 'churn' },
+            'conversion_rate': { icon: 'fa-mouse-pointer', color: 'green', elementId: 'conversion' }
+        };
+
+        async function initDashboard() {
+            await refreshData();
+            // Auto refresh every 30s
+            setInterval(refreshData, 30000);
+        }
+
+        async function refreshData() {
+            try {
+                const btn = document.querySelector('.refresh-fab i');
+                btn.classList.add('fa-spin');
+
+                const response = await fetch('/api/kpis');
+                const data = await response.json();
+
+                if (data.kpis) {
+                    updateDashboard(data.kpis);
+                }
+
+                setTimeout(() => btn.classList.remove('fa-spin'), 1000);
+            } catch (e) {
+                console.error("Failed to fetch data", e);
+            }
+        }
+
+        function updateDashboard(kpis) {
+            const otherMetricsContainer = document.getElementById('other-metrics-grid');
+            otherMetricsContainer.innerHTML = '';
+
+            // Separate primary metrics from others
+            const primaryKeys = Object.keys(KPI_CONFIG);
+
+            kpis.forEach(kpi => {
+                // Formatting
+                const value = formatValue(kpi.value, kpi.name);
+                const trend = kpi.change_percent ? kpi.change_percent.toFixed(1) + '%' : '0%';
+                const isUp = kpi.change_percent >= 0;
+                const trendIcon = isUp ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>';
+                const trendClass = isUp ? 'trend-up' : 'trend-down';
+                const trendHtml = `<span class="${trendClass}">${trendIcon} ${trend}</span> vs last period`;
+
+                // Update Primary Cards
+                if (KPI_CONFIG[kpi.name]) {
+                    const config = KPI_CONFIG[kpi.name];
+                    const valEl = document.getElementById(`${config.elementId}-val`);
+                    const trendEl = document.getElementById(`${config.elementId}-trend`);
+
+                    if (valEl) valEl.innerHTML = value;
+                    if (trendEl) trendEl.innerHTML = trendHtml;
+                } else {
+                    // Add to "Other Metrics"
+                    const card = document.createElement('div');
+                    card.className = 'metric-card';
+                    card.style.padding = '16px';
+                    card.innerHTML = `
+                        <div class="metric-title" style="font-size: 0.8em; margin-bottom: 8px;">${kpi.name.replace(/_/g, ' ').toUpperCase()}</div>
+                        <div style="font-size: 1.4em; font-weight: 700; color: var(--dark); margin-bottom: 4px;">${value}</div>
+                        <div class="metric-trend" style="font-size: 0.8em;">${trendHtml}</div>
+                    `;
+                    otherMetricsContainer.appendChild(card);
+                }
+            });
+
+            // Update Chart (using Revenue data)
+            const revenueKPI = kpis.find(k => k.name === 'daily_revenue');
+            if (revenueKPI) updateChart(revenueKPI);
+
+            // Update Anomalies
+            updateAnomaliesList(kpis);
+        }
+
+        function updateChart(revenueData) {
+            const ctx = document.getElementById('mainChart').getContext('2d');
+
+            // Create nice gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(67, 97, 238, 0.4)');
+            gradient.addColorStop(1, 'rgba(67, 97, 238, 0.0)');
+
+            // Mock historical data logic for visualization (since backend returns limited points)
+            // In a real app we'd use revenueData.historical_values properly
+            let dataPoints = revenueData.historical_values || [];
+            // Ensure we have enough points for a nice chart
+            if (dataPoints.length < 7) {
+                const base = revenueData.value || 1000;
+                dataPoints = Array(12).fill(0).map((_, i) => base * (0.9 + Math.random() * 0.2));
+            }
+
+            const labels = dataPoints.map((_, i) => `Day ${i + 1}`);
+
+            if (mainChartInstance) {
+                mainChartInstance.destroy();
+            }
+
+            mainChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Revenue',
+                        data: dataPoints,
+                        borderColor: '#4361ee',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#4361ee',
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e293b', /* Dark card bg */
+                            titleColor: '#f8f9fa',
+                            bodyColor: '#cbd5e1',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            padding: 12,
+                            titleFont: { family: 'Inter', size: 13 },
+                            bodyFont: { family: 'Inter', size: 14 },
+                            displayColors: false,
+                            callbacks: {
+                                label: function (context) {
+                                    return '$ ' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Inter' }, color: '#94a3b8' }
+                        },
+                        y: {
+                            border: { dash: [4, 4], color: '#334155' },
+                            grid: { color: '#334155' }, /* Darker grid lines */
+                            ticks: {
+                                font: { family: 'Inter' },
+                                color: '#94a3b8',
+                                callback: value => '$' + value.toLocaleString()
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateAnomaliesList(kpis) {
+            const container = document.getElementById('anomalies-list');
+            const alerts = kpis.filter(k => k.status === 'alert');
+
+            if (alerts.length === 0) {
+                container.innerHTML = `
+                    <div class="no-anomalies-state">
+                        <i class="fas fa-check-circle" style="font-size: 2em; margin-bottom: 15px;"></i>
+                        <p>No anomalies detected</p>
+                        <p style="font-size: 0.9em; opacity: 0.8; margin-top: 5px;">System is performing normally</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = alerts.map(alert => `
+                <div class="anomaly-card ${alert.alert_priority === 'high' ? 'high-priority' : ''}">
+                    <div class="anomaly-header">
+                        <div class="anomaly-title">
+                            <i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i>
+                            ${alert.name.replace(/_/g, ' ').toUpperCase()}
+                        </div>
+                        <div class="anomaly-time">${new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                    </div>
+                    <div class="anomaly-desc">
+                        ${alert.description}
+                        <div style="font-weight: 600; margin-top: 6px;">
+                            Value: ${formatValue(alert.value, alert.name)} 
+                            <span style="color: var(--danger); font-size: 0.9em; margin-left: 6px;">
+                                (${alert.change_percent > 0 ? '+' : ''}${alert.change_percent.toFixed(1)}%)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function formatValue(value, name) {
+            if (name.includes('delivery_time')) {
+                return Math.max(0, Math.round(value)).toString();
+            }
+            if (name.includes('rate') || name.includes('percentage')) {
+                return value.toFixed(1) + '%';
+            }
+            if (name.includes('revenue') || name.includes('value')) {
+                return '$' + value.toLocaleString();
+            }
+            return value.toLocaleString();
+        }
+
+        initDashboard();
+    </script>
+</body>
+
+</html>

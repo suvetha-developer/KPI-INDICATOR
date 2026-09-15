@@ -1,0 +1,118 @@
+{
+  "database": {
+    "type": "sqlite",
+    "database": "data/olist.db"
+  },
+  "kpis": [
+    {
+      "name": "daily_revenue",
+      "description": "Daily Revenue",
+      "sql_query": "SELECT COALESCE(SUM(op.payment_value), 0) as value FROM olist_order_payments_dataset op JOIN olist_orders_dataset o ON op.order_id = o.order_id WHERE DATE(o.order_purchase_timestamp) = DATE('now') AND o.order_status != 'canceled'",
+      "threshold_type": "percentage_drop",
+      "threshold_value": 10,
+      "comparison_period": "previous_week",
+      "alert_enabled": true,
+      "alert_priority": "high"
+    },
+    {
+      "name": "average_order_value",
+      "description": "Average Order Value (AOV)",
+      "sql_query": "SELECT COALESCE(AVG(op.payment_value), 0) as value FROM olist_order_payments_dataset op JOIN olist_orders_dataset o ON op.order_id = o.order_id WHERE DATE(o.order_purchase_timestamp) = DATE('now') AND o.order_status != 'canceled'",
+      "threshold_type": "percentage_drop",
+      "threshold_value": 15,
+      "comparison_period": "previous_week",
+      "alert_enabled": true,
+      "alert_priority": "medium"
+    },
+    {
+      "name": "daily_order_volume",
+      "description": "Daily Order Volume",
+      "sql_query": "SELECT COUNT(DISTINCT o.order_id) as value FROM olist_orders_dataset o WHERE DATE(o.order_purchase_timestamp) = DATE('now') AND o.order_status != 'canceled'",
+      "threshold_type": "percentage_drop",
+      "threshold_value": 20,
+      "comparison_period": "previous_week",
+      "alert_enabled": true,
+      "alert_priority": "high"
+    },
+    {
+      "name": "customer_churn_rate",
+      "description": "Customer Churn Rate",
+      "sql_query": "SELECT COALESCE(COUNT(DISTINCT c.customer_id) * 100.0 / NULLIF((SELECT COUNT(DISTINCT customer_id) FROM olist_orders_dataset WHERE DATE(order_purchase_timestamp) >= DATE('now', '-60 days') AND DATE(order_purchase_timestamp) < DATE('now', '-30 days')), 0), 0) as value FROM olist_customers_dataset c WHERE c.customer_id IN (SELECT DISTINCT customer_id FROM olist_orders_dataset WHERE DATE(order_purchase_timestamp) >= DATE('now', '-60 days') AND DATE(order_purchase_timestamp) < DATE('now', '-30 days')) AND c.customer_id NOT IN (SELECT DISTINCT customer_id FROM olist_orders_dataset WHERE DATE(order_purchase_timestamp) >= DATE('now', '-30 days'))",
+      "threshold_type": "absolute_spike",
+      "threshold_value": 5,
+      "comparison_period": "previous_month",
+      "alert_enabled": true,
+      "alert_priority": "high"
+    },
+    {
+      "name": "conversion_rate",
+      "description": "Order Conversion Rate (Delivered Orders)",
+      "sql_query": "SELECT COALESCE(COUNT(CASE WHEN o.order_status = 'delivered' THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 0) as value FROM olist_orders_dataset o WHERE DATE(o.order_purchase_timestamp) = DATE('now')",
+      "threshold_type": "percentage_drop",
+      "threshold_value": 15,
+      "comparison_period": "previous_week",
+      "alert_enabled": true,
+      "alert_priority": "high"
+    },
+    {
+      "name": "payment_approval_rate",
+      "description": "Payment Approval Rate",
+      "sql_query": "SELECT COALESCE(COUNT(CASE WHEN o.order_status IN ('approved', 'processing', 'shipped', 'delivered') THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 0) as value FROM olist_orders_dataset o WHERE DATE(o.order_purchase_timestamp) = DATE('now')",
+      "threshold_type": "percentage_drop",
+      "threshold_value": 10,
+      "comparison_period": "previous_week",
+      "alert_enabled": true,
+      "alert_priority": "medium"
+    },
+    {
+      "name": "average_delivery_time",
+      "description": "Average Delivery Time (Days)",
+      "sql_query": "SELECT COALESCE(AVG(julianday(o.order_delivered_customer_date) - julianday(o.order_purchase_timestamp)), 0) as value FROM olist_orders_dataset o WHERE o.order_status = 'delivered' AND o.order_delivered_customer_date IS NOT NULL AND DATE(o.order_delivered_customer_date) >= DATE('now', '-7 days')",
+      "threshold_type": "absolute_spike",
+      "threshold_value": 3,
+      "comparison_period": "previous_week",
+      "alert_enabled": true,
+      "alert_priority": "medium"
+    },
+    {
+      "name": "on_time_delivery_rate",
+      "description": "On-Time Delivery Rate",
+      "sql_query": "SELECT COALESCE(COUNT(CASE WHEN o.order_delivered_customer_date <= o.order_estimated_delivery_date THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 0) as value FROM olist_orders_dataset o WHERE o.order_status = 'delivered' AND o.order_delivered_customer_date IS NOT NULL AND DATE(o.order_delivered_customer_date) >= DATE('now', '-7 days')",
+      "threshold_type": "percentage_drop",
+      "threshold_value": 10,
+      "comparison_period": "previous_week",
+      "alert_enabled": true,
+      "alert_priority": "medium"
+    },
+    {
+      "name": "repeat_customer_rate",
+      "description": "Repeat Customer Rate",
+      "sql_query": "SELECT COALESCE(COUNT(DISTINCT CASE WHEN customer_order_count > 1 THEN o.customer_id END) * 100.0 / NULLIF(COUNT(DISTINCT o.customer_id), 0), 0) as value FROM (SELECT customer_id, COUNT(*) as customer_order_count FROM olist_orders_dataset WHERE DATE(order_purchase_timestamp) >= DATE('now', '-30 days') GROUP BY customer_id) customer_stats JOIN olist_orders_dataset o ON o.customer_id = customer_stats.customer_id WHERE DATE(o.order_purchase_timestamp) >= DATE('now', '-30 days')",
+      "threshold_type": "percentage_drop",
+      "threshold_value": 5,
+      "comparison_period": "previous_month",
+      "alert_enabled": true,
+      "alert_priority": "low"
+    }
+  ],
+  "alerts": {
+    "email": {
+      "enabled": false,
+      "smtp_server": "smtp.gmail.com",
+      "smtp_port": 587,
+      "smtp_user": "your_email@gmail.com",
+      "smtp_password": "your_app_password",
+      "recipients": ["analyst@company.com", "manager@company.com"]
+    },
+    "slack": {
+      "enabled": false,
+      "webhook_url": "https://hooks.slack.com/services/YOUR/WEBHOOK/URL",
+      "channel": "#kpi-alerts"
+    }
+  },
+  "reporting": {
+    "excel_output_path": "reports/kpi_report.xlsx",
+    "include_charts": true
+  }
+}
+
