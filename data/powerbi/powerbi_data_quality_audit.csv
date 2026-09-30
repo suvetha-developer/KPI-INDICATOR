@@ -1,0 +1,33 @@
+audit_id,run_timestamp,rule_name,category,status,failed_records_count,score,details
+5b9214cf-dbca-46c4-92fc-db181b7ed646,2026-09-30T22:23:58.724522,Orders Primary Fields Completeness,Completeness,PASS,0,87.5,"Verifies that order_id, customer_id, order_status, and purchase timestamp are not null"
+b4567d9d-9f1d-4754-ac00-bf15a5dd6e4d,2026-09-30T22:23:58.724522,Payment Records Completeness,Completeness,PASS,0,87.5,"Ensures payment_value, payment_type, and order_id are fully populated"
+5c80f465-1282-4c71-b1ee-fc42d99a9fc7,2026-09-30T22:23:58.724522,Order ID Uniqueness,Uniqueness,PASS,0,87.5,Ensures no duplicate order_id exists in the primary orders table
+873be91a-a8ec-4b67-8ece-047fcc182e54,2026-09-30T22:23:58.724522,Payment Sequence Uniqueness,Uniqueness,PASS,0,87.5,"Verifies composite key uniqueness (order_id, payment_sequential)"
+6c8e63fb-3174-4f90-921f-58519563cf30,2026-09-30T22:23:58.724522,Payment Value Domain Validity,Validity,PASS,0,87.5,Validates that monetary payment amounts are strictly non-negative
+1691a8d6-cac2-4e54-8a40-170c146c0198,2026-09-30T22:23:58.724522,Chronological Delivery Logic,Validity,FAIL,2624,87.5,Ensures customer delivery timestamp occurs after the initial purchase date
+36871122-6766-4df3-81e4-6399fba15ec9,2026-09-30T22:23:58.724522,Orphan Payments Check,Referential Integrity,PASS,0,87.5,Verifies that all payment entries map directly to valid orders in olist_orders_dataset
+2ed8680d-6825-4417-95b9-3692ef74f853,2026-09-30T22:23:58.724522,Customer Review Score Bounds,Validity,PASS,0,87.5,Ensures CSAT review scores adhere to the standardized 1-5 integer scale
+b571f499-c981-4550-8b59-6463bda3bcc1,2026-09-30T22:23:37.646619,Orders Primary Fields Completeness,Completeness,PASS,0,87.5,"Verifies that order_id, customer_id, order_status, and purchase timestamp are not null"
+8b58867e-4267-4a88-9232-d07a5c2f2760,2026-09-30T22:23:37.646619,Payment Records Completeness,Completeness,PASS,0,87.5,"Ensures payment_value, payment_type, and order_id are fully populated"
+22e0e435-f79b-45c2-993f-ac150c31a63b,2026-09-30T22:23:37.646619,Order ID Uniqueness,Uniqueness,PASS,0,87.5,Ensures no duplicate order_id exists in the primary orders table
+55323695-9140-42c8-b9b8-bfbf25608001,2026-09-30T22:23:37.646619,Payment Sequence Uniqueness,Uniqueness,PASS,0,87.5,"Verifies composite key uniqueness (order_id, payment_sequential)"
+b83b350b-4733-42bf-a024-3c25832b127f,2026-09-30T22:23:37.646619,Payment Value Domain Validity,Validity,PASS,0,87.5,Validates that monetary payment amounts are strictly non-negative
+ef1b0402-8fe1-4f1f-a4ae-6c3fef09e05e,2026-09-30T22:23:37.646619,Chronological Delivery Logic,Validity,FAIL,2624,87.5,Ensures customer delivery timestamp occurs after the initial purchase date
+c118a82d-3eeb-421f-9166-9e121e680e9c,2026-09-30T22:23:37.646619,Orphan Payments Check,Referential Integrity,PASS,0,87.5,Verifies that all payment entries map directly to valid orders in olist_orders_dataset
+71a06a8c-5df5-4d7f-b3da-a484acc22042,2026-09-30T22:23:37.646619,Customer Review Score Bounds,Validity,PASS,0,87.5,Ensures CSAT review scores adhere to the standardized 1-5 integer scale
+f3749dbc-11c7-4b7b-a362-d79d26f03f38,2026-09-30T22:09:02.829499,Orders Primary Fields Completeness,Completeness,PASS,0,87.5,"Verifies that order_id, customer_id, order_status, and purchase timestamp are not null"
+ac7ef937-595c-4918-954e-45bc23644370,2026-09-30T22:09:02.829499,Payment Records Completeness,Completeness,PASS,0,87.5,"Ensures payment_value, payment_type, and order_id are fully populated"
+a444ddd7-b041-499c-b265-3ea5ac3e4bf6,2026-09-30T22:09:02.829499,Order ID Uniqueness,Uniqueness,PASS,0,87.5,Ensures no duplicate order_id exists in the primary orders table
+022104dc-896a-4a14-9a18-d2bc2e726be2,2026-09-30T22:09:02.829499,Payment Sequence Uniqueness,Uniqueness,PASS,0,87.5,"Verifies composite key uniqueness (order_id, payment_sequential)"
+56f2b48a-ce9d-4cc1-8193-7ac1d82d015f,2026-09-30T22:09:02.829499,Payment Value Domain Validity,Validity,PASS,0,87.5,Validates that monetary payment amounts are strictly non-negative
+77153a78-2569-49f1-86f7-cf4b09d61814,2026-09-30T22:09:02.829499,Chronological Delivery Logic,Validity,FAIL,2624,87.5,Ensures customer delivery timestamp occurs after the initial purchase date
+e9359745-bc94-47e4-9b2a-eedee79f3247,2026-09-30T22:09:02.829499,Orphan Payments Check,Referential Integrity,PASS,0,87.5,Verifies that all payment entries map directly to valid orders in olist_orders_dataset
+4f05c06a-2a65-49ec-af24-cfbf74b6e258,2026-09-30T22:09:02.829499,Customer Review Score Bounds,Validity,PASS,0,87.5,Ensures CSAT review scores adhere to the standardized 1-5 integer scale
+dc238bfc-8cce-421a-877d-693c40849d4f,2026-09-30T22:08:50.670709,Orders Primary Fields Completeness,Completeness,PASS,0,87.5,"Verifies that order_id, customer_id, order_status, and purchase timestamp are not null"
+70aa848a-3730-4861-b896-d21824134c3b,2026-09-30T22:08:50.670709,Payment Records Completeness,Completeness,PASS,0,87.5,"Ensures payment_value, payment_type, and order_id are fully populated"
+94afadce-de8f-4a53-bb99-4e37fe8b6f13,2026-09-30T22:08:50.670709,Order ID Uniqueness,Uniqueness,PASS,0,87.5,Ensures no duplicate order_id exists in the primary orders table
+9525e165-58b6-4bd5-a0ff-c3cb363fd95b,2026-09-30T22:08:50.670709,Payment Sequence Uniqueness,Uniqueness,PASS,0,87.5,"Verifies composite key uniqueness (order_id, payment_sequential)"
+243b3d30-99d5-41ee-82d3-034390226b93,2026-09-30T22:08:50.670709,Payment Value Domain Validity,Validity,PASS,0,87.5,Validates that monetary payment amounts are strictly non-negative
+e170fcc3-f434-4f19-84b8-21601fe40286,2026-09-30T22:08:50.670709,Chronological Delivery Logic,Validity,FAIL,2624,87.5,Ensures customer delivery timestamp occurs after the initial purchase date
+ff99c2d8-96c4-4e63-9da9-1a17b32f59af,2026-09-30T22:08:50.670709,Orphan Payments Check,Referential Integrity,PASS,0,87.5,Verifies that all payment entries map directly to valid orders in olist_orders_dataset
+455f2da2-65ce-45e1-952e-9f1deefbefe2,2026-09-30T22:08:50.670709,Customer Review Score Bounds,Validity,PASS,0,87.5,Ensures CSAT review scores adhere to the standardized 1-5 integer scale

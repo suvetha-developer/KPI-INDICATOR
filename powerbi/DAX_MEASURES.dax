@@ -1,0 +1,120 @@
+// ==============================================================================
+// AUTOMATED KPI MONITORING & ALERT SYSTEM — POWER BI DAX MEASURES
+// Project: Operational Data Analysis, Anomaly Detection & KPI Dashboards
+// Author: Automated Analytics Pipeline
+// ==============================================================================
+
+// ------------------------------------------------------------------------------
+// 1. REVENUE & FINANCIAL PERFORMANCE
+// ------------------------------------------------------------------------------
+
+Total Revenue = 
+SUM('vw_powerbi_operational_orders'[order_revenue])
+
+Daily Average Revenue = 
+AVERAGEX(
+    VALUES('vw_powerbi_operational_orders'[order_date]), 
+    [Total Revenue]
+)
+
+Prior Period Revenue = 
+CALCULATE(
+    [Total Revenue], 
+    DATEADD('vw_powerbi_operational_orders'[order_date], -7, DAY)
+)
+
+Revenue DoD Growth % = 
+VAR CurrentRev = [Total Revenue]
+VAR PriorRev = CALCULATE([Total Revenue], DATEADD('vw_powerbi_operational_orders'[order_date], -1, DAY))
+RETURN
+IF(
+    ISBLANK(PriorRev) || PriorRev = 0, 
+    0, 
+    DIVIDE(CurrentRev - PriorRev, PriorRev, 0) * 100
+)
+
+Average Order Value (AOV) = 
+DIVIDE([Total Revenue], [Total Orders], 0)
+
+// ------------------------------------------------------------------------------
+// 2. ORDER VOLUME & LOGISTICS PERFORMANCE
+// ------------------------------------------------------------------------------
+
+Total Orders = 
+DISTINCTCOUNT('vw_powerbi_operational_orders'[order_id])
+
+Delivered Orders = 
+CALCULATE(
+    [Total Orders],
+    'vw_powerbi_operational_orders'[order_status] = "delivered"
+)
+
+On-Time Delivered Orders = 
+CALCULATE(
+    [Total Orders],
+    'vw_powerbi_operational_orders'[is_on_time] = 1
+)
+
+On-Time Delivery Rate % = 
+DIVIDE([On-Time Delivered Orders], [Delivered Orders], 0) * 100
+
+Average Delivery Time (Days) = 
+AVERAGE('vw_powerbi_operational_orders'[delivery_days])
+
+SLA Breach Count = 
+CALCULATE(
+    [Total Orders],
+    'vw_powerbi_operational_orders'[is_on_time] = 0
+)
+
+// ------------------------------------------------------------------------------
+// 3. CUSTOMER SATISFACTION & CHURN
+// ------------------------------------------------------------------------------
+
+Average CSAT Score = 
+AVERAGE('vw_powerbi_operational_orders'[csat_review_score])
+
+Promoter Orders (5-Star) = 
+CALCULATE([Total Orders], 'vw_powerbi_operational_orders'[csat_review_score] = 5)
+
+Detractor Orders (1-2 Star) = 
+CALCULATE([Total Orders], 'vw_powerbi_operational_orders'[csat_review_score] IN {1, 2})
+
+Net CSAT Index % = 
+DIVIDE([Promoter Orders] - [Detractor Orders], [Total Orders], 0) * 100
+
+// ------------------------------------------------------------------------------
+// 4. DATA QUALITY & ANOMALY MONITORING
+// ------------------------------------------------------------------------------
+
+Data Quality Integrity Score % = 
+AVERAGE('kpi_data_quality_audit'[score])
+
+Active Anomaly Indicator = 
+IF(
+    [Revenue DoD Growth %] < -15.0 || [On-Time Delivery Rate %] < 85.0,
+    "CRITICAL ALERT",
+    "HEALTHY"
+)
+
+// ------------------------------------------------------------------------------
+// 5. STATISTICAL PROCESS CONTROL (SPC) LIMITS (2-Sigma)
+// ------------------------------------------------------------------------------
+
+Revenue Rolling 14D Mean = 
+AVERAGEX(
+    DATESINPERIOD('vw_powerbi_operational_orders'[order_date], MAX('vw_powerbi_operational_orders'[order_date]), -14, DAY),
+    [Total Revenue]
+)
+
+Revenue Rolling 14D StdDev = 
+STDEVX.P(
+    DATESINPERIOD('vw_powerbi_operational_orders'[order_date], MAX('vw_powerbi_operational_orders'[order_date]), -14, DAY),
+    [Total Revenue]
+)
+
+Revenue Upper Control Limit (UCL) = 
+[Revenue Rolling 14D Mean] + (2 * [Revenue Rolling 14D StdDev])
+
+Revenue Lower Control Limit (LCL) = 
+MAX(0, [Revenue Rolling 14D Mean] - (2 * [Revenue Rolling 14D StdDev]))

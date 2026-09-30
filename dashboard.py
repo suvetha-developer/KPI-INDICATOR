@@ -7,7 +7,7 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request, send_file
 from typing import Dict, List, Any
 
 # #region agent log
@@ -36,6 +36,13 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from src.database import DatabaseConnection
 from src.kpi_calculator import KPICalculator
+from src.synthetic_generator import generator as synthetic_generator
+from src.data_quality import dq_engine
+from src.anomaly_detector import anomaly_detector
+from src.powerbi_exporter import powerbi_exporter
+from src.predictive_engine import predictive_engine
+from src.root_cause_analyzer import root_cause_analyzer
+from src.incident_manager import incident_manager
 
 # Configure logging
 logging.basicConfig(
@@ -229,8 +236,221 @@ def get_status():
     return jsonify({
         'status': 'running',
         'last_update': last_update,
-        'monitor_initialized': kpi_monitor is not None
+        'monitor_initialized': kpi_monitor is not None,
+        'synthetic_stream': synthetic_generator.get_status()
     })
+
+
+# -------------------------------------------------------------------------
+# Real-Time Synthetic Dataset & Anomaly Injection Endpoints
+# -------------------------------------------------------------------------
+
+@app.route('/api/synthetic/status', methods=['GET'])
+def get_synthetic_status():
+    """Get real-time synthetic generator status."""
+    return jsonify(synthetic_generator.get_status())
+
+
+@app.route('/api/synthetic/stream/start', methods=['POST'])
+def start_synthetic_stream():
+    """Start real-time synthetic order streaming."""
+    data = request.get_json(silent=True) or {}
+    interval = float(data.get('interval', 5.0))
+    mode = data.get('mode', 'NORMAL')
+    synthetic_generator.start_realtime_stream(interval_seconds=interval, mode=mode)
+    return jsonify({
+        'success': True,
+        'message': f'Real-time synthetic stream started in {mode} mode ({interval}s interval)',
+        'status': synthetic_generator.get_status()
+    })
+
+
+@app.route('/api/synthetic/stream/stop', methods=['POST'])
+def stop_synthetic_stream():
+    """Stop real-time synthetic order streaming."""
+    synthetic_generator.stop_realtime_stream()
+    return jsonify({
+        'success': True,
+        'message': 'Real-time synthetic stream paused',
+        'status': synthetic_generator.get_status()
+    })
+
+
+@app.route('/api/synthetic/inject', methods=['POST'])
+def inject_synthetic_batch():
+    """Inject a targeted batch of synthetic orders or anomaly scenario."""
+    data = request.get_json(silent=True) or {}
+    mode = data.get('mode', 'NORMAL').upper()
+    count = int(data.get('count', 25))
+
+    if mode == 'CHURN_SPIKE':
+        result = synthetic_generator.inject_churn_anomaly_cohort(churn_count=count)
+    elif mode == 'DATA_QUALITY_ANOMALY':
+        result = synthetic_generator.inject_data_quality_anomaly()
+    else:
+        result = synthetic_generator.inject_batch(count=count, mode=mode)
+
+    return jsonify(result)
+
+
+# -------------------------------------------------------------------------
+# Automated Data Quality (DQ) Audit Endpoints
+# -------------------------------------------------------------------------
+
+@app.route('/api/data-quality/audit', methods=['GET'])
+def run_data_quality_audit():
+    """Run automated SQL & Python data quality checks."""
+    try:
+        report = dq_engine.run_all_checks()
+        return jsonify(report)
+    except Exception as e:
+        logger.error(f"Data quality audit error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/data-quality/clean', methods=['POST'])
+def clean_data_quality():
+    """Remediate injected data quality test records."""
+    try:
+        res = dq_engine.clean_known_anomalies()
+        return jsonify(res)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# -------------------------------------------------------------------------
+# Statistical Trend & Anomaly Detection Endpoints
+# -------------------------------------------------------------------------
+
+@app.route('/api/anomalies/trends', methods=['GET'])
+def get_operational_trends():
+    """Analyze time series data using Z-score and moving averages."""
+    try:
+        trends = anomaly_detector.analyze_operational_trends()
+        return jsonify(trends)
+    except Exception as e:
+        logger.error(f"Anomaly trend analysis error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# -------------------------------------------------------------------------
+# Power BI Integration & Dataset Export Endpoints
+# -------------------------------------------------------------------------
+
+@app.route('/api/powerbi/export', methods=['POST'])
+def export_powerbi_dataset():
+    """Export operational datasets to CSV and refresh SQL views for Power BI."""
+    try:
+        res = powerbi_exporter.export_all_datasets()
+        return jsonify(res)
+    except Exception as e:
+        logger.error(f"Power BI export error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/powerbi/dax', methods=['GET'])
+def get_powerbi_dax():
+    """Retrieve pre-built Power BI DAX measures."""
+    dax_path = Path(__file__).parent / 'powerbi' / 'DAX_MEASURES.dax'
+    if dax_path.exists():
+        with open(dax_path, 'r', encoding='utf-8') as f:
+            dax_content = f.read()
+        return jsonify({'success': True, 'dax': dax_content})
+    return jsonify({'error': 'DAX file not found'}), 404
+
+
+# -------------------------------------------------------------------------
+# Predictive Forecasting & What-If Simulation Endpoints
+# -------------------------------------------------------------------------
+
+@app.route('/api/forecast', methods=['GET'])
+def get_predictive_forecast():
+    """Get 7-day statistical forecast with early warning indicators."""
+    horizon = int(request.args.get('days', 7))
+    try:
+        res = predictive_engine.generate_forecast(horizon_days=horizon)
+        return jsonify(res)
+    except Exception as e:
+        logger.error(f"Forecast error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/simulate/what-if', methods=['POST'])
+def simulate_what_if():
+    """Simulate business impact of pricing, churn, and shipping changes."""
+    data = request.get_json(silent=True) or {}
+    price_change = float(data.get('price_change_pct', 0.0))
+    churn_change = float(data.get('churn_change_pct', 0.0))
+    delivery_delay = float(data.get('delivery_delay_days', 0.0))
+    try:
+        res = predictive_engine.simulate_what_if_scenario(
+            price_change_pct=price_change,
+            churn_change_pct=churn_change,
+            delivery_delay_days=delivery_delay
+        )
+        return jsonify(res)
+    except Exception as e:
+        logger.error(f"What-if simulation error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# -------------------------------------------------------------------------
+# Automated Root-Cause Analysis (RCA) Endpoints
+# -------------------------------------------------------------------------
+
+@app.route('/api/root-cause/diagnose', methods=['GET'])
+def diagnose_root_cause():
+    """Execute automated drill-down across Geography, Category, Payment, Logistics."""
+    kpi = request.args.get('kpi', 'daily_revenue')
+    try:
+        res = root_cause_analyzer.diagnose_operational_anomaly(kpi_name=kpi)
+        return jsonify(res)
+    except Exception as e:
+        logger.error(f"RCA error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# -------------------------------------------------------------------------
+# Incident Lifecycle & Multi-Channel Webhook Dispatcher
+# -------------------------------------------------------------------------
+
+@app.route('/api/incidents', methods=['GET'])
+def list_incidents():
+    """Get recent operational incidents."""
+    try:
+        incidents = incident_manager.list_incidents()
+        return jsonify({'incidents': incidents})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/incidents/<incident_id>/ack', methods=['POST'])
+def acknowledge_incident(incident_id):
+    """Acknowledge incident by on-call user."""
+    data = request.get_json(silent=True) or {}
+    ack_by = data.get('user', 'On-Call Engineer')
+    res = incident_manager.acknowledge_incident(incident_id, ack_by=ack_by)
+    return jsonify(res)
+
+
+@app.route('/api/incidents/<incident_id>/resolve', methods=['POST'])
+def resolve_incident(incident_id):
+    """Mark incident resolved with operator notes."""
+    data = request.get_json(silent=True) or {}
+    notes = data.get('notes', 'Resolved via operational dashboard')
+    res = incident_manager.resolve_incident(incident_id, notes=notes)
+    return jsonify(res)
+
+
+@app.route('/api/alerts/webhook/test', methods=['POST'])
+def test_webhook():
+    """Send test alert card to Slack or Teams."""
+    data = request.get_json(silent=True) or {}
+    url = data.get('webhook_url', '')
+    p_type = data.get('type', 'slack')
+    res = incident_manager.dispatch_webhook_notification(url, payload_type=p_type)
+    return jsonify(res)
+
 
 
 if __name__ == '__main__':

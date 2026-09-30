@@ -1,0 +1,12 @@
+customer_state,customer_city,total_orders,state_revenue,state_aov,avg_csat
+XX,Test City,2624,262129.68,99.9,
+SP,campinas,8,2071.48,258.94,3.88
+RS,porto alegre,8,1396.74,174.59,2.5
+BA,salvador,6,1168.57,194.76,3.83
+CE,fortaleza,5,1131.88,226.38,3.8
+MG,belo horizonte,7,1065.69,152.24,3.29
+PE,recife,7,1060.36,151.48,3.57
+SP,sao paulo,8,829.63,103.7,2.88
+PR,curitiba,6,794.28,132.38,3.83
+RJ,rio de janeiro,5,697.58,139.52,3.0
+DF,brasilia,4,549.3,137.32,2.5
